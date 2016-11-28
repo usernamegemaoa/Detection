@@ -12,6 +12,8 @@
 #define MAX_ADDR_LEN 16
 
 #define the Ethernet header
+
+
 typedef struct ether_header{
 	u_char ether_dst[6];        //destination address
 	u_char ether_src[6];		//source address
@@ -98,6 +100,19 @@ typedef struct arp_header{
 	u_char dst_ip_addr[4];
 }arp_headr;
 
+typedef struct pkt_arry{
+	ip_address src;
+	ip_address dst;
+	u_char pkt_len;
+	int num;
+	float rate;
+	const u_char *content;
+}pkt_arry;
+
+typedef struct pkt_set{
+	u_char len;
+	const u_char *pkt_data;
+}pkt_set;
 
 void hexdump(const u_char *pkt_content, u_int length);
 
@@ -135,4 +150,7 @@ void packet_handle_eht(u_char *arg,
 
 void contest_handle();
 
-void wave_transform(u_char *arry, int length);
+void pkt_aggregat(pkt_set arry[], int length);
+
+void calc_rate(pkt_arry arry[], int length);
+void judge(pkt_arry arry[], int length);

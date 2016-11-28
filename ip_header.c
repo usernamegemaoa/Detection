@@ -1,5 +1,10 @@
 #include "ip_header.h"
 
+#define PKT_LENGTH 500
+
+#define MIN_RATE 15		///////////
+#define MAX_RATE 40      /////////////////
+
 void hexdump(const u_char *pkt_content, u_int length)// , u_char length)
 {
 	//length = 16;
@@ -285,7 +290,105 @@ void contest_handle()
 {
 
 }
-void wave_transform(u_char *arry, int length)
+void pkt_aggregat(pkt_set arry[], int length)
 {
+	int i, j, k;
+	const u_char *data;
+	const u_char *content;
+	ip_header *ih;
+	tcp_header *th;
+	u_int ip_len;
+	u_int hlen;
+	ip_address dst;
+	ip_address src;
+	u_char plen;
+
+	pkt_arry pkt[PKT_LENGTH];
+	j = 0;
+
+	data = arry[0].pkt_data;
+	//获取ip数据包头的位置
+	ih = (ip_header*)(data + 14);
+
+	//获取tcp数据包的头位置
+	ip_len = ih->header_length * 4;
+	th = (tcp_header*)(ih + ip_len);
+
+	//获取数据的位置
+	hlen = th->offset * 4;
+	content = (u_char*)(th + hlen);
+
+	/*pkt[j].src = ih->src;
+	pkt[j].dst = ih->dst;
+	pkt[j].num = 1;
+	pkt[j].content = content;
+	pkt[j].pkt_len = arry[0].len;
+	++j;*/
+
+	for (i = 0; i < length; ++i)
+	{
+		data = arry[i].pkt_data;
+		//获取ip数据包头的位置
+		ih = (ip_header*)(data + 14);
+
+		//获取tcp数据包的头位置
+		ip_len = ih->header_length * 4;
+		th = (tcp_header*)(ih + ip_len);
+
+		//获取数据的位置
+		hlen = th->offset * 4;
+		content = (u_char*)(th + hlen);
+		for (k = 0; k < j; ++k)
+		{
+			dst = pkt[k].dst;
+			src = pkt[k].src;
+			plen = pkt[k].pkt_len;
+			if (memcmp(&dst, &(ih->dst), sizeof(ip_address))
+				&& memcmp(&src, &(ih->src), sizeof(ip_address))
+				&& plen == arry[i].len
+				&& strcmp(pkt[k].content, content)
+				)
+			{
+				++pkt[k].num;
+				break;
+
+			}
+		}
+		if (k == j)
+		{
+			pkt[j].src = ih->src;
+			pkt[j].dst = ih->dst;
+			pkt[j].num = 1;
+			pkt[j].content = content;
+			pkt[j].pkt_len = arry[i].len;
+			pkt[j].rate = 0;
+			++j;
+		}
+	}
+}
+
+void calc_rate(pkt_arry arry[], int length)
+{
+	int i, j;
+	for (i = 0; i < length; ++i)
+	{
+		arry[i].rate = arry[i].num / 10.0;
+	}
 
 }
+
+void judge(pkt_arry arry[], int length)
+{
+	int i;
+	printf("Some connection may be the trojan communication:");
+	for (i = 0; i < length; ++i)
+	{
+		if (MIN_RATE < arry[i].rate && arry[i].rate < MAX_RATE)
+		{
+			printf("IP address : ");
+		}
+	}
+
+}
+
+

@@ -4,6 +4,7 @@
 
 #define packet_len_threshold 90
 #define MAX_LENGTH 10000
+//#define PACKET_LENGTH 90
 
 
 int main()
@@ -14,7 +15,10 @@ int main()
 	int i = 0;
 	u_int j = 0;
 	pcap_t *adhandle;
+	char packet_filter[] = "ip and tcp"; //过滤，只获取ipv4的tcp包
+	struct bpf_program fcode;
 	int res;
+	u_int netmask;
 	u_char packat_len;
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct tm *ltime;
@@ -22,7 +26,7 @@ int main()
 	struct pcap_pkthdr *header;
 	const u_char *pkt_data;
 	time_t local_tv_sec;
-	u_char *arry = (u_char *)malloc(MAX_LENGTH * 2);
+	pkt_set arry[MAX_LENGTH];
 	int current_len = 0;
 
 	time_t start_time, current_time, duration;
@@ -83,6 +87,30 @@ int main()
 		return -1;
 	}
 
+	if (d->addresses != NULL)
+		/* 获得接口第一个地址的掩码 */
+		netmask = ((struct sockaddr_in *)(d->addresses->netmask))->sin_addr.S_un.S_addr;
+	else
+		/* 如果接口没有地址，那么我们假设一个C类的掩码 */
+		netmask = 0xffffff;
+
+	if (pcap_compile(adhandle, &fcode, packet_filter, 1, netmask) <0)
+	{
+		fprintf(stderr, "\nUnable to compile the packet filter. Check the syntax.\n");
+		/* 释放设备列表 */
+		pcap_freealldevs(alldevs);
+		return -1;
+	}
+
+	//设置过滤器
+	if (pcap_setfilter(adhandle, &fcode)<0)
+	{
+		fprintf(stderr, "\nError setting the filter.\n");
+		/* 释放设备列表 */
+		pcap_freealldevs(alldevs);
+		return -1;
+	}
+
 	printf("\nlistening on %s...\n", d->description);
 
 	/* 释放设备列表 */
@@ -110,7 +138,8 @@ int main()
 			//insert to the pcaket_len_set
 			if (current_len  < MAX_LENGTH)
 			{
-				arry[current_len] = packat_len;
+				arry[current_len].pkt_data = pkt_data;
+				arry[current_len].len = packat_len;
 				++current_len;
 			}
 			else
@@ -127,7 +156,7 @@ int main()
 		printf("Error reading the packets: %s\n", pcap_geterr(adhandle));
 		return -1;
 	}
-	wave_transform(arry,current_len);
-	free(arry);
+	pht_aggregat(arry,current_len);
+	//free(arry);
 	return 0;
 }
