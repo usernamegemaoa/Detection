@@ -28,10 +28,11 @@ int main()
 	time_t local_tv_sec;
 	pkt_set arry[MAX_LENGTH];
 	int current_len = 0;
+	char temp;
 
-	time_t start_time, current_time, duration;
-	printf("Please input the time (s) you want to capture the packet:");
-	scanf("%d", &duration);
+	time_t start_time, current_time;
+	int duration;
+	
 
 
 	/* 获取本机设备列表 */
@@ -110,7 +111,8 @@ int main()
 		pcap_freealldevs(alldevs);
 		return -1;
 	}
-
+	printf("Please input the time (s) you want to capture the packet:");
+	scanf("%d", &duration);
 	printf("\nlistening on %s...\n", d->description);
 
 	/* 释放设备列表 */
@@ -150,13 +152,16 @@ int main()
 
 			}
 		}
+		current_time = time(NULL);
 	}
 
 	if (res == -1){
 		printf("Error reading the packets: %s\n", pcap_geterr(adhandle));
 		return -1;
 	}
-	pht_aggregat(arry,current_len);
+	printf("Capture %d packets.\n", current_len);
+	pkt_aggregat(arry, current_len, duration);
 	//free(arry);
+	scanf("%s",&temp);
 	return 0;
 }

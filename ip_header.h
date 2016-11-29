@@ -105,7 +105,7 @@ typedef struct pkt_arry{
 	ip_address dst;
 	u_char pkt_len;
 	int num;
-	float rate;
+	double rate;
 	const u_char *content;
 }pkt_arry;
 
@@ -150,7 +150,7 @@ void packet_handle_eht(u_char *arg,
 
 void contest_handle();
 
-void pkt_aggregat(pkt_set arry[], int length);
+void pkt_aggregat(pkt_set arry[], int length, int time);
 
-void calc_rate(pkt_arry arry[], int length);
+void calc_rate(pkt_arry arry[], int length,int time);
 void judge(pkt_arry arry[], int length);

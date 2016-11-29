@@ -1,9 +1,14 @@
 #include "ip_header.h"
 
+typedef int bool;
+#define TRUE 1
+#define FALSE 0
+
 #define PKT_LENGTH 500
 
-#define MIN_RATE 15		///////////
+#define MIN_RATE 15		///////////每分钟数据包的个数
 #define MAX_RATE 40      /////////////////
+//#define TIME 10.0
 
 void hexdump(const u_char *pkt_content, u_int length)// , u_char length)
 {
@@ -290,7 +295,7 @@ void contest_handle()
 {
 
 }
-void pkt_aggregat(pkt_set arry[], int length)
+void pkt_aggregat(pkt_set arry[], int length, int time)
 {
 	int i, j, k;
 	const u_char *data;
@@ -306,17 +311,17 @@ void pkt_aggregat(pkt_set arry[], int length)
 	pkt_arry pkt[PKT_LENGTH];
 	j = 0;
 
-	data = arry[0].pkt_data;
-	//获取ip数据包头的位置
-	ih = (ip_header*)(data + 14);
+	//data = arry[0].pkt_data;
+	////获取ip数据包头的位置
+	//ih = (ip_header*)(data + 14);
 
-	//获取tcp数据包的头位置
-	ip_len = ih->header_length * 4;
-	th = (tcp_header*)(ih + ip_len);
+	////获取tcp数据包的头位置
+	//ip_len = ih->header_length * 4;
+	//th = (tcp_header*)(ih + ip_len);
 
-	//获取数据的位置
-	hlen = th->offset * 4;
-	content = (u_char*)(th + hlen);
+	////获取数据的位置
+	//hlen = th->offset * 4;
+	//content = (u_char*)(th + hlen);
 
 	/*pkt[j].src = ih->src;
 	pkt[j].dst = ih->dst;
@@ -365,28 +370,47 @@ void pkt_aggregat(pkt_set arry[], int length)
 			++j;
 		}
 	}
+	calc_rate(pkt, j, time);
+	judge(pkt, j);
 }
 
-void calc_rate(pkt_arry arry[], int length)
+void calc_rate(pkt_arry arry[], int length, int time)
 {
-	int i, j;
+	int i;
 	for (i = 0; i < length; ++i)
 	{
-		arry[i].rate = arry[i].num / 10.0;
+		arry[i].rate = arry[i].num / (time / 60.0);
 	}
 
 }
 
 void judge(pkt_arry arry[], int length)
 {
+	bool flag = FALSE;
 	int i;
-	printf("Some connection may be the trojan communication:");
+	
 	for (i = 0; i < length; ++i)
 	{
 		if (MIN_RATE < arry[i].rate && arry[i].rate < MAX_RATE)
 		{
-			printf("IP address : ");
+			printf("Some connection may be the trojan communication:");
+			printf("IP address> ");
+			printf("Source Address -> Destination Address.\n");
+			printf("%d.%d.%d.%d -> %d.%d.%d.%d\n",
+				arry[i].src.byte1,
+				arry[i].src.byte2,
+				arry[i].src.byte3,
+				arry[i].src.byte4,
+				arry[i].dst.byte1,
+				arry[i].dst.byte2,
+				arry[i].dst.byte3,
+				arry[i].dst.byte4);
+			flag = TRUE;
 		}
+	}
+	if (flag == FALSE)
+	{
+		printf("No Trojan communication!\n");
 	}
 
 }
